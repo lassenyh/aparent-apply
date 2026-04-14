@@ -106,14 +106,6 @@ async function buildApplicationPdf(params: {
     y -= 26;
   }
 
-  page.drawText("JOBBSOKNAD", {
-    x: left,
-    y,
-    size: labelSize,
-    font: boldFont,
-    color: textColor,
-  });
-  y -= 14;
   page.drawRectangle({
     x: left,
     y,
