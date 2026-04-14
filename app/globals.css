@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: "BasisGrotesqueMonoPro";
+  src: url("/font/BasisGrotesqueMonoPro-Md.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #f7f7f4;
+  --fg: #111111;
+  --muted: #626262;
+  --line: #dbdbd6;
+  --line-strong: #151515;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --font-sans: "BasisGrotesqueMonoPro", "Basis Grotesque Mono Pro", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-mono: "BasisGrotesqueMonoPro", "Basis Grotesque Mono Pro", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+html.dark,
+.dark {
+  --bg: #111312;
+  --fg: #efefea;
+  --muted: #9b9d96;
+  --line: #373934;
+  --line-strong: #d9d9d2;
+}
+
+* {
+  border-color: var(--line);
+}
+
+body,
+input,
+textarea,
+select,
+button {
+  font-family: "BasisGrotesqueMonoPro", "Basis Grotesque Mono Pro", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  letter-spacing: 0.01em;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: inset 0 -1px 0 var(--line-strong);
+}
