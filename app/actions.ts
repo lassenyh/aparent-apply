@@ -1,5 +1,8 @@
 "use server";
 
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Resend } from "resend";
 
 export type FormState = {
@@ -47,6 +50,162 @@ async function toAttachment(file: File) {
     filename: file.name,
     content: Buffer.from(bytes),
   };
+}
+
+async function buildApplicationPdf(params: {
+  name: string;
+  website: string;
+  reelUrl: string;
+  experience: string;
+  about: string;
+  softwareList: string;
+  otherSoftware: string;
+}) {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595.28, 841.89]); // A4
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const monoSize = 10.5;
+  const labelSize = 9.5;
+  const left = 48;
+  const right = 547.28;
+  const maxWidth = right - left;
+  const sectionLine = rgb(0.84, 0.84, 0.84);
+  const textColor = rgb(0.1, 0.1, 0.1);
+  let y = 805;
+
+  try {
+    const logoPath = path.join(
+      process.cwd(),
+      "public",
+      "logo",
+      "APARENT_DOUBLE_BLACK.png",
+    );
+    const logoBytes = await readFile(logoPath);
+    const logo = await pdf.embedPng(logoBytes);
+    const targetWidth = 128;
+    const scale = targetWidth / logo.width;
+    const targetHeight = logo.height * scale;
+
+    page.drawImage(logo, {
+      x: left,
+      y: y - targetHeight,
+      width: targetWidth,
+      height: targetHeight,
+    });
+    y -= targetHeight + 24;
+  } catch {
+    // Fall back to text header if logo file is unavailable in runtime.
+    page.drawText("APARENT", {
+      x: left,
+      y,
+      size: 13,
+      font: boldFont,
+      color: textColor,
+    });
+    y -= 26;
+  }
+
+  page.drawText("JOBBSOKNAD", {
+    x: left,
+    y,
+    size: labelSize,
+    font: boldFont,
+    color: textColor,
+  });
+  y -= 14;
+  page.drawRectangle({
+    x: left,
+    y,
+    width: right - left,
+    height: 1,
+    color: sectionLine,
+  });
+  y -= 20;
+
+  const wrapText = (text: string) => {
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let current = "";
+
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word;
+      const width = font.widthOfTextAtSize(next, monoSize);
+      if (width <= maxWidth) {
+        current = next;
+      } else {
+        if (current) lines.push(current);
+        current = word;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  };
+
+  const drawFieldRow = (label: string, value: string) => {
+    page.drawText(label, {
+      x: left,
+      y,
+      size: labelSize,
+      font: boldFont,
+      color: textColor,
+    });
+    page.drawText(value || "-", {
+      x: 205,
+      y,
+      size: monoSize,
+      font,
+      color: textColor,
+    });
+    y -= 16;
+    page.drawRectangle({
+      x: left,
+      y,
+      width: right - left,
+      height: 0.7,
+      color: sectionLine,
+    });
+    y -= 14;
+  };
+
+  drawFieldRow("NAVN", params.name);
+  drawFieldRow("WEBSIDE", params.website);
+  drawFieldRow("SHOWREEL URL", params.reelUrl);
+  drawFieldRow("ERFARING", params.experience);
+  drawFieldRow("SOFTWARE KUNNSKAP", params.softwareList);
+  drawFieldRow("ANNEN SOFTWARE", params.otherSoftware);
+
+  page.drawText("NOEN ORD OM DEG SELV", {
+    x: left,
+    y,
+    size: labelSize,
+    font: boldFont,
+    color: textColor,
+  });
+  y -= 14;
+  page.drawRectangle({
+    x: left,
+    y,
+    width: right - left,
+    height: 0.7,
+    color: sectionLine,
+  });
+  y -= 16;
+
+  const aboutLines = wrapText(params.about || "-");
+  for (const line of aboutLines) {
+    page.drawText(line, {
+      x: left,
+      y,
+      size: monoSize,
+      font,
+      color: textColor,
+    });
+    y -= 14;
+  }
+
+  const bytes = await pdf.save();
+  return Buffer.from(bytes);
 }
 
 export async function submitApplication(
@@ -138,6 +297,20 @@ export async function submitApplication(
 
     const softwareList = software.length ? software.join(", ") : "Ingen valgt";
     const fromDomain = process.env.RESEND_FROM || "Aparent Apply <onboarding@resend.dev>";
+    const applicationPdf = await buildApplicationPdf({
+      name,
+      website,
+      reelUrl,
+      experience,
+      about,
+      softwareList,
+      otherSoftware,
+    });
+
+    attachments.unshift({
+      filename: "aparent-soknad.pdf",
+      content: applicationPdf,
+    });
 
     await resend.emails.send({
       from: fromDomain,
