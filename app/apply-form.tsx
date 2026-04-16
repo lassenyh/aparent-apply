@@ -121,6 +121,7 @@ export function ApplyForm() {
 
     const data = new FormData(formElement);
     const name = String(data.get("name") || "-");
+    const email = String(data.get("email") || "-");
     const website = String(data.get("website") || "-");
     const reelUrl = String(data.get("reelUrl") || "-");
     const experience = String(data.get("experience") || "-");
@@ -136,6 +137,7 @@ export function ApplyForm() {
       "Aparent - Soknad (preview)",
       "",
       `NAVN: ${name || "-"}`,
+      `EPOST: ${email || "-"}`,
       `WEBSIDE: ${website || "-"}`,
       `SHOWREEL URL: ${reelUrl || "-"}`,
       `SHOWREEL FIL: ${reelFile instanceof File && reelFile.name ? reelFile.name : "-"}`,
@@ -195,6 +197,23 @@ export function ApplyForm() {
                 className="w-full bg-transparent text-[12px] uppercase tracking-[0.12em] text-[color:var(--fg)] outline-none placeholder:text-[color:var(--muted)]"
               />
               <FieldError message={state.errors.name} />
+            </div>
+          </div>
+
+          <div className="border-b border-[color:var(--line)] py-3 sm:grid sm:grid-cols-[180px_minmax(0,1fr)] sm:items-start sm:gap-8">
+            <label htmlFor="email" className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--fg)]">
+              Epost
+            </label>
+            <div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                inputMode="email"
+                required={isProd}
+                className="w-full bg-transparent text-[12px] uppercase tracking-[0.12em] text-[color:var(--fg)] outline-none placeholder:text-[color:var(--muted)]"
+              />
+              <FieldError message={state.errors.email} />
             </div>
           </div>
 

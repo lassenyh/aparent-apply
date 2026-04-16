@@ -44,6 +44,15 @@ function isValidUrl(value: string): boolean {
   }
 }
 
+function isValidEmail(value: string): boolean {
+  if (!value) {
+    return false;
+  }
+
+  // Basic format check suitable for form validation.
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 async function toAttachment(file: File) {
   const bytes = await file.arrayBuffer();
   return {
@@ -54,6 +63,7 @@ async function toAttachment(file: File) {
 
 async function buildApplicationPdf(params: {
   name: string;
+  email: string;
   website: string;
   reelUrl: string;
   experience: string;
@@ -161,6 +171,7 @@ async function buildApplicationPdf(params: {
   };
 
   drawFieldRow("NAVN", params.name);
+  drawFieldRow("EPOST", params.email);
   drawFieldRow("WEBSIDE", params.website);
   drawFieldRow("SHOWREEL URL", params.reelUrl);
   drawFieldRow("ERFARING", params.experience);
@@ -217,6 +228,7 @@ export async function submitApplication(
   }
 
   const name = textValue(formData, "name");
+  const email = textValue(formData, "email");
   const website = textValue(formData, "website");
   const reelUrl = textValue(formData, "reelUrl");
   const experience = textValue(formData, "experience");
@@ -234,6 +246,12 @@ export async function submitApplication(
 
   if (!name) {
     errors.name = "Legg inn navn.";
+  }
+
+  if (!email) {
+    errors.email = "Legg inn epost.";
+  } else if (!isValidEmail(email)) {
+    errors.email = "Epost må være gyldig.";
   }
 
   if (!experience) {
@@ -291,6 +309,7 @@ export async function submitApplication(
     const fromDomain = process.env.RESEND_FROM || "Aparent Apply <onboarding@resend.dev>";
     const applicationPdf = await buildApplicationPdf({
       name,
+      email,
       website,
       reelUrl,
       experience,
@@ -310,6 +329,7 @@ export async function submitApplication(
       subject: `Ny søknad: ${name}`,
       text: [
         `NAVN: ${name}`,
+        `EPOST: ${email}`,
         `WEBSIDE: ${website || "-"}`,
         `REEL URL: ${reelUrl || "-"}`,
         `ERFARING: ${experience}`,
